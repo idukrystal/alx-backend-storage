@@ -8,6 +8,7 @@ from typing import Callable
 
 
 def track(fn: Callable) -> Callable:
+    ''' tracks no of timesa function is called with a particular url '''
     r = redis.Redis()
 
     @wraps(fn)
