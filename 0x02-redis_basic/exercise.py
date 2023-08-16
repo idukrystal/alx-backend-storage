@@ -7,6 +7,24 @@ from functools import wraps
 from typing import Callable, Union
 
 
+def replay(method: Callable):
+    ''' relives method calls: prints imput/output vslues '''
+    input_key = method.__qualname__ + ":inputs"
+    output_key = method.__qualname__ + ":outputs"
+
+    r = redis.Redis()
+    input_history = r.lrange(input_key, 0, -1)
+    output_history = r.lrange(output_key, 0, -1)
+
+    print(f"{method.__qualname__} was called {len(input_history)} times:")
+
+    for input_args_str, output_str in zip(input_history, output_history):
+        output = output_str.decode("utf-8")
+        print(
+            f"{method.__qualname__}(*{input_args_str.decode('utf-8')}) -> {output}"
+        )
+
+
 def count_calls(method: Callable) -> Callable:
     ''' A decorator that keep track of fuction's call  '''
     @wraps(method)
