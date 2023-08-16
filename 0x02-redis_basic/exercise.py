@@ -21,7 +21,8 @@ def replay(method: Callable):
     for input_args_str, output_str in zip(input_history, output_history):
         output = output_str.decode("utf-8")
         print(
-            f"{method.__qualname__}(*{input_args_str.decode('utf-8')}) -> {output}"
+            f"{method.__qualname__}"
+            + f"(*{input_args_str.decode('utf-8')}) -> {output}"
         )
 
 
