@@ -15,12 +15,12 @@ def get_page(url: str) -> str:
     r.incr(count_key)
     r.expire(count_key, 10)
 
-    #cached = r.get(cache_key)
-    #if cached:
-        #return cached.decode('utf-8')
+    cached = r.get(cache_key)
+    if cached:
+        return cached.decode('utf-8')
 
     response = requests.get(url)
     content = response.text
-    #r.setex(cache_key, 10, content)
+    r.setex(cache_key, 10, content)
 
     return content
