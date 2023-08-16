@@ -3,24 +3,27 @@
 
 import requests
 import redis
+from functools import wraps
+from typing import Callable
 
 
-def get_page(url: str) -> str:
-    ''' return a urls content and tracks how many times it has been called'''
+def track(fn: Callable) -> Callable:
     r = redis.Redis()
 
-    count_key = f"count:{url}"
-    # cache_key = f"cache:{url}"
+    @wraps(fn)
+    def wrapper(url: str) -> str:
+        count_key = f"count:{url}"
 
-    r.incr(count_key)
-    r.expire(count_key, 10)
+        r.incr(count_key)
+        r.expire(count_key, 10)
+        return fn(url)
+    return wrapper
 
-    # cached = r.get(cache_key)
-    # if cached:
-    # return cached.decode('utf-8')
 
+@track
+def get_page(url: str) -> str:
+    ''' return a urls content '''
     response = requests.get(url)
     content = response.text
-    # r.setex(cache_key, 10, content)
 
     return content
