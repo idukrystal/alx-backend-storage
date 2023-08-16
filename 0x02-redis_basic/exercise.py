@@ -8,12 +8,30 @@ from typing import Callable, Union
 
 
 def count_calls(method: Callable) -> Callable:
-    ''' A decorator that keep track of fuction csll times  '''
+    ''' A decorator that keep track of fuction's call  '''
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         key = method.__qualname__
         self._redis.incr(key)
         return method(self, *args, **kwargs)
+    return wrapper
+
+
+def call_history(method: Callable) -> Callable:
+    ''' A decorator that keeps track of functions input/outputs '''
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        input_key = method.__qualname__ + ":inputs"
+        output_key = method.__qualname__ + ":outputs"
+
+        input_args_str = str(args)
+        self._redis.rpush(input_key, input_args_str)
+
+        output = method(self, *args, **kwargs)
+
+        self._redis.rpush(output_key, str(output))
+
+        return output
     return wrapper
 
 
@@ -28,6 +46,7 @@ class Cache:
         self._redis.flushdb()
 
     @count_calls
+    @call_history
     def store(self, data:  Union[str, bytes, int, float]) -> str:
         ''' Store new data in cache object '''
         key = str(uuid.uuid4())
