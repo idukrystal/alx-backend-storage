@@ -16,7 +16,6 @@ def track(fn: Callable) -> Callable:
         count_key = f"count:{url}"
 
         r.incr(count_key)
-        r.expire(count_key, 10)
         return fn(url)
     return wrapper
 
@@ -25,6 +24,5 @@ def track(fn: Callable) -> Callable:
 def get_page(url: str) -> str:
     ''' return a urls content '''
     response = requests.get(url)
-    content = response.text
 
-    return content
+    return response.text
