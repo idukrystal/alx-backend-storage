@@ -14,8 +14,15 @@ def track(fn: Callable) -> Callable:
     @wraps(fn)
     def wrapper(url: str) -> str:
         count_key = f"count:{url}"
+        cache_key = f"cache:{url}"
 
         r.incr(count_key)
+
+        cache = redis_instance.get(cache_key)
+        if cache:
+            return cache.decode('utf-8')
+
+        r.set(count_key, 0)
         return fn(url)
     return wrapper
 
