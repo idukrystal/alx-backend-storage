@@ -1,35 +1,38 @@
 #!/usr/bin/env python3
-''' A module thst does stuff '''
-
-import requests
+'''A module with tools for request caching and tracking.
+'''
 import redis
+import requests
 from functools import wraps
 from typing import Callable
 
 
-def track(fn: Callable) -> Callable:
-    ''' tracks no of timesa function is called with a particular url '''
-    r = redis.Redis()
-
-    @wraps(fn)
-    def wrapper(url: str) -> str:
-        count_key = f"count:{url}"
-        cache_key = f"cache:{url}"
-
-        r.incr(count_key)
-
-        cache = redis_instance.get(cache_key)
-        if cache:
-            return cache.decode('utf-8')
-
-        r.set(count_key, 0)
-        return fn(url)
-    return wrapper
+redis_store = redis.Redis()
+'''The module-level Redis instance.
+'''
 
 
-@track
+def data_cacher(method: Callable) -> Callable:
+    '''Caches the output of fetched data.
+    '''
+    @wraps(method)
+    def invoker(url) -> str:
+        '''The wrapper function for caching the output.
+        '''
+        redis_store.incr(f'count:{url}')
+        result = redis_store.get(f'result:{url}')
+        if result:
+            return result.decode('utf-8')
+        result = method(url)
+        redis_store.set(f'count:{url}', 0)
+        redis_store.setex(f'result:{url}', 10, result)
+        return result
+    return invoker
+
+
+@data_cacher
 def get_page(url: str) -> str:
-    ''' return a urls content '''
-    response = requests.get(url)
-
-    return response.text
+    '''Returns the content of a URL after caching the request's response,
+    and tracking the request.
+    '''
+    return requests.get(url).text
